@@ -157,7 +157,6 @@ ssp_cost_converter <- function(original_amount,original_region,original_year,tar
     }
 }
         
-C
 
 
 ssp_cost_converter(5, "USA", 2015, "BRA", 2019)
