@@ -1,8 +1,8 @@
 
 
-ER_bilateral <- read.csv("https://github.com/milocortes/ssp_cost_converter/raw/main/data/ER_bilateral.csv")
-PPP_bilateral <- read.csv("https://github.com/milocortes/ssp_cost_converter/raw/main/data/PPP_bilateral.csv")
-WB_inflation <- read.csv("https://raw.githubusercontent.com/milocortes/ssp_cost_converter/main/data/INFLATION_wb.csv")
+ER_bilateral <- read.csv("/home/milo/Documents/egap/NIDHI/PPP/data/ER_bilateral.csv")
+PPP_bilateral <- read.csv("/home/milo/Documents/egap/NIDHI/PPP/data/PPP_bilateral.csv")
+WB_inflation <- read.csv("/home/milo/Documents/egap/NIDHI/PPP/data/INFLATION_wb.csv")
 
 countries_lac <- c('ARG','BHS','BRB','BLZ','BOL','BRA','CHL','COL','CRI','DOM','ECU','SLV','GTM','GUY','HTI','HND','JAM','MEX','NIC','PAN','PRY','PER','SUR','TTO','URY')
 
@@ -45,12 +45,13 @@ update_amount <- function(original_amount,original_region,original_year,target_r
 
 ssp_cost_converter <- function(original_amount,original_region,original_year,target_region,target_year){
 
-    if (target_region == 'LAC_AVERAGE'){
+    if (target_region == 'LAC_AVERAGE' & original_region!='LAC_AVERAGE' ){
         #print(1)
         return(mean(ssp_cost_converter(original_amount,original_region,original_year,"EACH_LAC_COUNTRY", target_year)$value))
 
-    }else if(target_region == 'EACH_LAC_COUNTRY' & original_region != 'EACH_LAC_COUNTRY'){
+    }else if(target_region == 'EACH_LAC_COUNTRY' & original_region != 'EACH_LAC_COUNTRY' & original_region != 'LAC_AVERAGE' ){
         #print(2)
+
         lac_costs_vector <- c()
 
         for(lac_country in countries_lac){
@@ -129,6 +130,28 @@ ssp_cost_converter <- function(original_amount,original_region,original_year,tar
 
 
         return(aggregate(value ~ original_region, cost_df, mean))
+    }else if(target_region == 'EACH_LAC_COUNTRY' & original_region == 'LAC_AVERAGE'){
+        #print(6)
+        #print(target_region)
+        #print(original_amount)
+        avg_cost_df <- data.frame(
+            "region" = countries_lac,
+            "value" = replicate(length(countries_lac),original_amount)
+        )
+        #print(avg_cost_df)
+        all_lac_average_cost <- ssp_cost_converter(avg_cost_df, "EACH_LAC_COUNTRY", original_year, "EACH_LAC_COUNTRY", target_year)
+
+        return(all_lac_average_cost)
+    }else if(target_region == 'LAC_AVERAGE' & original_region == 'LAC_AVERAGE' & (original_year < target_year) ){
+        #print(7)
+        all_lac_average_cost <- ssp_cost_converter(original_amount, "LAC_AVERAGE", original_year, "EACH_LAC_COUNTRY", target_year)
+        return(mean(all_lac_average_cost$value))
+
+    }else if(target_region == 'LAC_AVERAGE' &  original_region== 'EACH_LAC_COUNTRY' & (original_year > target_year)){
+        #print(8)
+        reciprocal_all_lac_average_cost <- ssp_cost_converter(original_amount, "EACH_LAC_COUNTRY", original_year, "EACH_LAC_COUNTRY", target_year)
+        return(mean(reciprocal_all_lac_average_cost$value) )
+
     }else{
 
         if (original_year <= target_year){
@@ -157,23 +180,3 @@ ssp_cost_converter <- function(original_amount,original_region,original_year,tar
     }
 }
         
-
-
-ssp_cost_converter(5, "USA", 2015, "BRA", 2019)
-ssp_cost_converter(3.11696503966219, "BRA", 2019, "USA", 2015)
-
-lac_average_cost <- ssp_cost_converter(5, "USA", 2015, "EACH_LAC_COUNTRY", 2019)
-lac_average_cost
-mean(lac_average_cost$value)
-ssp_cost_converter(5, "USA", 2015, "LAC_AVERAGE", 2019)
-
-ssp_cost_converter(lac_average_cost, "EACH_LAC_COUNTRY", 2019, "USA", 2015)
-
-
-#################### 
-lac_average_cost$value <- 5
-lac_average_cost
-all_lac_average_cost <- ssp_cost_converter(lac_average_cost, "EACH_LAC_COUNTRY", 2015, "EACH_LAC_COUNTRY", 2019)
-mean(all_lac_average_cost$value)
-reciprocal_all_lac_average_cost <- ssp_cost_converter(all_lac_average_cost, "EACH_LAC_COUNTRY", 2019, "EACH_LAC_COUNTRY", 2015)
-mean(reciprocal_all_lac_average_cost$value) 
