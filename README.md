@@ -5,7 +5,7 @@ SSPCostConverter R package.
 
 Run in R: 
 
-```
+```R
 # Install necessary packages
 list.of.packages <- c("devtools")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
