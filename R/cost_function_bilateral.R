@@ -245,4 +245,20 @@ ssp_cost_converter <- function(original_amount,original_region,original_year,tar
     return(general_output)
 }
 
+
+
+ssp_cost_converter_df <- function(df_costs){
     
+    
+    df_costs$cost_converted <- apply(cost_df,1, function (x) {ssp_cost_converter(as.numeric(x['original_amount']),
+                                                    as.character(x['original_region']),
+                                                    as.numeric(x['original_year']),
+                                                    as.character(x['target_region']),
+                                                    as.numeric(x['target_year']))})
+                                                    
+    
+
+    general_output <- df_costs
+
+    return(general_output)
+}
