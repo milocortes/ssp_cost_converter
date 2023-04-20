@@ -1,11 +1,77 @@
+print("*********************************************")
+print("                                             ")
+print("          ssp_cost_converter                 ")
+print("                                             ")
+print("          Version : 1.0.0                    ")
+print("*********************************************")
 
+# load the ncdf4 package
+library(ncdf4)
+library(tools)
 
-ER_bilateral <- read.csv("/home/milo/Documents/egap/NIDHI/PPP/data/ER_bilateral.csv")
-PPP_bilateral <- read.csv("/home/milo/Documents/egap/NIDHI/PPP/data/PPP_bilateral.csv")
-WB_inflation <- read.csv("/home/milo/Documents/egap/NIDHI/PPP/data/INFLATION_wb.csv")
+# data path
+data_path <- file.path(file_path_as_absolute(".."),"data")
+
+# Open a netCDF file
+my_ncdf <- nc_open(file.path(data_path,'ppp_er_data.h5'))
+
+# Open inflation data
+WB_inflation <- read.csv(file.path(data_path,"INFLATION_wb.csv"))
+
+row.names.countries <-   c('ALB','DZA','AGO','ATG','ARG','ARM','ABW','AUS','AUT','AZE','BHS','BHR','BGD','BRB','BLR','BEL','BLZ','BEN','BMU','BTN','BOL','BIH','BWA','BRA','BRN','BGR','BFA','BDI','CPV','KHM','CMR','CAN','CAF','TCD','CHL','CHN','COL','COM','COD','COG','CRI','CIV','HRV','CYP','CZE','DNK','DMA','DOM','ECU','EGY','SLV','GNQ','EST','SWZ','ETH','FJI','FIN','FRA','GAB','GMB','GEO','DEU','GHA','GRC','GRD','GTM','GNB','GUY','HTI','HND','HKG','HUN','ISL','IND','IDN','IRN','IRQ','IRL','ISR','ITA','JAM','JPN','JOR','KAZ','KEN','KIR','KOR','KGZ','LAO','LVA','LBN','LSO','LBY','LTU','LUX','MAC','MDG','MYS','MDV','MLI','MLT','MRT','MUS','MEX','FSM','MDA','MNG','MNE','MAR','MOZ','NAM','NRU','NPL','NLD','NZL','NIC','NER','MKD','NOR','OMN','PAK','PLW','PAN','PNG','PRY','PER','PHL','POL','PRT','QAT','ROU','RUS','RWA','WSM','SAU','SEN','SRB','SYC','SLE','SGP','SVK','SVN','SLB','ZAF','ESP','LKA','KNA','LCA','VCT','SUR','SWE','CHE','TJK','TZA','THA','TLS','TGO','TON','TTO','TUN','TUR','UGA','UKR','ARE','GBR','USA','URY','VUT','VNM','ZMB')
+column.names.countries <- row.names.countries
+matrix.names.countries <- as.character(c(2005:2021))
+
+er_array  <- array(ncvar_get(my_ncdf, attributes(my_ncdf$var)$names[1]), dim = c(170, 170, 17),
+                  dimnames = list(row.names.countries, column.names.countries,matrix.names.countries))
+		
+	
+ppp_array <- array(ncvar_get(my_ncdf, attributes(my_ncdf$var)$names[2]), dim = c(170, 170, 17),
+                  dimnames = list(row.names.countries, column.names.countries,matrix.names.countries) )
+
 
 countries_lac <- c('ARG','BHS','BRB','BLZ','BOL','BRA','CHL','COL','CRI','DOM','ECU','SLV','GTM','GUY','HTI','HND','JAM','MEX','NIC','PAN','PRY','PER','SUR','TTO','URY')
+all_world_countries <- c('ALB','DZA','AGO','ATG','ARG','ARM','ABW','AUS','AUT','AZE','BHS','BHR','BGD','BRB','BLR','BEL','BLZ','BEN','BMU','BTN','BOL','BIH','BWA','BRA','BRN','BGR','BFA','BDI','CPV','KHM','CMR','CAN','CAF','TCD','CHL','CHN','COL','COM','COD','COG','CRI','CIV','HRV','CYP','CZE','DNK','DMA','DOM','ECU','EGY','SLV','GNQ','EST','SWZ','ETH','FJI','FIN','FRA','GAB','GMB','GEO','DEU','GHA','GRC','GRD','GTM','GNB','GUY','HTI','HND','HKG','HUN','ISL','IND','IDN','IRN','IRQ','IRL','ISR','ITA','JAM','JPN','JOR','KAZ','KEN','KIR','KOR','KGZ','LAO','LVA','LBN','LSO','LBY','LTU','LUX','MAC','MDG','MYS','MDV','MLI','MLT','MRT','MUS','MEX','FSM','MDA','MNG','MNE','MAR','MOZ','NAM','NRU','NPL','NLD','NZL','NIC','NER','MKD','NOR','OMN','PAK','PLW','PAN','PNG','PRY','PER','PHL','POL','PRT','QAT','ROU','RUS','RWA','WSM','SAU','SEN','SRB','SYC','SLE','SGP','SVK','SVN','SLB','ZAF','ESP','LKA','KNA','LCA','VCT','SUR','SWE','CHE','TJK','TZA','THA','TLS','TGO','TON','TTO','TUN','TUR','UGA','UKR','ARE','GBR','USA','URY','VUT','VNM','ZMB')
 
+get_countries_region_named_list = list(EACH_LAC_COUNTRY=countries_lac, 
+                            EACH_GLOBAL_COUNTRY=all_world_countries) 
+
+refactor_target_region <- function(target_region){
+    if(nchar(target_region)==3){
+        return(target_region)
+    }else if(grepl("AVERAGE",target_region)){
+        if(grepl("LAC",target_region)){
+            return("EACH_LAC_COUNTRY")
+        }else if(grepl("GLOBAL",target_region)){
+            return("EACH_GLOBAL_COUNTRY")
+        }
+    }else{
+        if(grepl("LAC",target_region)){
+            return("EACH_LAC_COUNTRY")
+        }else if(grepl("GLOBAL",target_region)){
+            return("EACH_GLOBAL_COUNTRY")
+        }
+    }
+}
+
+
+get_countries_region <- function(target_region, hashmap_regions){
+    if(nchar(target_region)==3){
+        return(target_region)
+    }else if(grepl("AVERAGE",target_region)){
+        if(grepl("LAC",target_region)){
+            return(hashmap_regions[["EACH_LAC_COUNTRY"]])
+        }else if(grepl("GLOBAL",target_region)){
+            return(hashmap_regions[["EACH_GLOBAL_COUNTRY"]])
+        }
+    }else{
+        if(grepl("LAC",target_region)){
+            return(hashmap_regions[["EACH_LAC_COUNTRY"]])
+        }else if(grepl("GLOBAL",target_region)){
+            return(hashmap_regions[["EACH_GLOBAL_COUNTRY"]])
+        }
+    }
+}
 
 compound_rate <- function(r, actualization){
 
@@ -45,138 +111,136 @@ update_amount <- function(original_amount,original_region,original_year,target_r
 
 ssp_cost_converter <- function(original_amount,original_region,original_year,target_region,target_year){
 
-    if (target_region == 'LAC_AVERAGE' & original_region!='LAC_AVERAGE' ){
+    tmp_target_region <- target_region
+    target_region <- refactor_target_region(target_region)
+
+    countries_in_region <- get_countries_region(target_region, get_countries_region_named_list)
+    countries_in_region_original_country <- get_countries_region(refactor_target_region(original_region), get_countries_region_named_list)
+
+
+    if(grepl("AVERAGE",original_region)){
+        original_amount <- data.frame(
+            "region" = countries_in_region_original_country, 
+            "value" = replicate(length(countries_in_region_original_country),original_amount)
+            )
+        
+    }
+    #print(target_region)
+    if(nchar(original_region) == 3 & nchar(target_region) == 3){
         #print(1)
-        return(mean(ssp_cost_converter(original_amount,original_region,original_year,"EACH_LAC_COUNTRY", target_year)$value))
-
-    }else if(target_region == 'EACH_LAC_COUNTRY' & original_region != 'EACH_LAC_COUNTRY' & original_region != 'LAC_AVERAGE' ){
-        #print(2)
-
-        lac_costs_vector <- c()
-
-        for(lac_country in countries_lac){
-            cost_value_country <- ssp_cost_converter(original_amount,original_region,original_year,lac_country,target_year)
-            lac_costs_vector <- append(lac_costs_vector, cost_value_country)
-        }
-
-        cost_df <- data.frame(
-            "region" = countries_lac, 
-            "value" = lac_costs_vector
-            )
-        
-        return(cost_df)
-    }else if(original_region == 'EACH_LAC_COUNTRY' & target_region != 'EACH_LAC_COUNTRY'){
-        #print(3)
-        lac_costs_vector <- c()
-        
-        for(i in c(1:NROW(original_amount))){
-            individual_cost <- ssp_cost_converter(lac_average_cost[i,]$value, lac_average_cost[i,]$region, original_year, target_region, target_year)
-            lac_costs_vector <- append(lac_costs_vector, individual_cost)
-        }
-
-        return(mean(lac_costs_vector))
-    }else if(original_region == 'EACH_LAC_COUNTRY' & target_region == 'EACH_LAC_COUNTRY' & (original_year < target_year)){
-        #print(4)
-        all_dataframes <- data.frame()
-
-        for(i in c(1:NROW(original_amount))){
-            print(original_amount[i,]$region)
-            lac_costs_vector <- c()
-            original_region_name <- c()
-            target_region_name <- c()
-
-            for(lac_country in countries_lac){
-                individual_cost <- ssp_cost_converter(original_amount[i,]$value, original_amount[i,]$region, original_year, lac_country, target_year)
-                lac_costs_vector <- append(lac_costs_vector, individual_cost)  
-                original_region_name <- append(original_region_name, original_amount[i,]$region)
-                target_region_name <- append(target_region_name, lac_country)
-            }
-            cost_df <- data.frame(
-                "original_region" = original_region_name,
-                "target_region" = target_region_name, 
-                "value" = lac_costs_vector
-                )
-
-            all_dataframes <- rbind.data.frame(all_dataframes, cost_df)
-        }
-
-        return(all_dataframes)
-    }else if(target_region == 'EACH_LAC_COUNTRY' &  original_region== 'EACH_LAC_COUNTRY' & (original_year > target_year)){
-        #print(5)
-        lac_costs_vector <- c()
-        original_region_name <- c()
-        
-        or_reg_flag <- ""
-
-        for(i in c(1:NROW(original_amount))){
-            individual_cost <- ssp_cost_converter(original_amount[i,]$value, original_amount[i,]$target_region, original_year, original_amount[i,]$original_region, target_year)
-            
-            lac_costs_vector <- append(lac_costs_vector, individual_cost)  
-            original_region_name <- append(original_region_name, original_amount[i,]$original_region)
-
-            if(or_reg_flag!=original_amount[i,]$original_region){
-                or_reg_flag <- original_amount[i,]$original_region
-                print(or_reg_flag)
-            }
-
-            #print(paste(original_amount[i,]$original_region, original_amount[i,]$target_region, individual_cost))
-
-        }
-
-        cost_df <- data.frame(
-            "original_region" = original_region_name,
-            "value" = lac_costs_vector
-            )
-
-
-        return(aggregate(value ~ original_region, cost_df, mean))
-    }else if(target_region == 'EACH_LAC_COUNTRY' & original_region == 'LAC_AVERAGE'){
-        #print(6)
-        #print(target_region)
-        #print(original_amount)
-        avg_cost_df <- data.frame(
-            "region" = countries_lac,
-            "value" = replicate(length(countries_lac),original_amount)
-        )
-        #print(avg_cost_df)
-        all_lac_average_cost <- ssp_cost_converter(avg_cost_df, "EACH_LAC_COUNTRY", original_year, "EACH_LAC_COUNTRY", target_year)
-
-        return(all_lac_average_cost)
-    }else if(target_region == 'LAC_AVERAGE' & original_region == 'LAC_AVERAGE' & (original_year < target_year) ){
-        #print(7)
-        all_lac_average_cost <- ssp_cost_converter(original_amount, "LAC_AVERAGE", original_year, "EACH_LAC_COUNTRY", target_year)
-        return(mean(all_lac_average_cost$value))
-
-    }else if(target_region == 'LAC_AVERAGE' &  original_region== 'EACH_LAC_COUNTRY' & (original_year > target_year)){
-        #print(8)
-        reciprocal_all_lac_average_cost <- ssp_cost_converter(original_amount, "EACH_LAC_COUNTRY", original_year, "EACH_LAC_COUNTRY", target_year)
-        return(mean(reciprocal_all_lac_average_cost$value) )
-
-    }else{
-
         if (original_year <= target_year){
             updated_amount <- update_amount(original_amount,original_region,original_year,target_region,target_year)
             
-            ppp_bilateral_value <- subset(PPP_bilateral, original == original_region & target == target_region & Year == target_year)$PPP
-            er_bilateral_value <- subset(ER_bilateral, original == target_region & target == original_region & Year == target_year)$EXR
+            ppp_bilateral_value <- ppp_array[original_region, target_region, as.character(target_year)]
+            er_bilateral_value <- er_array[target_region, original_region, as.character(target_year)]
 
             amount_foreign_currency <- updated_amount/ppp_bilateral_value
 
             amount_dolars <- amount_foreign_currency / er_bilateral_value
 
-            return(amount_dolars)
+            general_output <- amount_dolars
         }else{
-            ppp_bilateral_value <- subset(PPP_bilateral, original == target_region & target == original_region & Year == original_year)$PPP
-            er_bilateral_value <- subset(ER_bilateral, original == target_region & target == original_region & Year == original_year)$EXR
+
+            ppp_bilateral_value <- ppp_array[target_region, original_region, as.character(original_year)]
+            er_bilateral_value <- er_array[target_region, original_region, as.character(original_year)]
 
             amount_foreign_currency <- original_amount/er_bilateral_value
             amount_dolars <- amount_foreign_currency * ppp_bilateral_value
 
             amount_dolars <- update_amount(amount_dolars,original_region,original_year,target_region,target_year)
 
-            return(amount_dolars)
+            general_output <- amount_dolars
 
         }
-    }
-}
+    }else if(nchar(original_region) == 3 & nchar(target_region) > 3){
+        #print(2)
+        countries_costs_vector <- c()
+
+        for(country in countries_in_region){
+            cost_value_country <- ssp_cost_converter(original_amount,original_region,original_year,country,target_year)
+            countries_costs_vector <- append(countries_costs_vector, cost_value_country)
+        }
+        cost_df <- data.frame(
+            "region" = countries_in_region, 
+            "value" = countries_costs_vector
+            )
         
+        general_output <- cost_df
+
+    }else if(nchar(original_region) != 3 & nchar(target_region) == 3){
+        #print(3)
+        countries_costs_vector <- c()
+        
+        for(i in c(1:NROW(original_amount))){
+            individual_cost <- ssp_cost_converter(original_amount[i,]$value, original_amount[i,]$region, original_year, target_region, target_year)
+            countries_costs_vector <- append(countries_costs_vector, individual_cost)
+        }
+
+        general_output <- mean(countries_costs_vector)
+
+    }else if(nchar(original_region) != 3 & nchar(target_region) != 3){
+        #print(4)
+
+        #print(countries_in_region)
+        if (original_year <= target_year){
+            all_dataframes <- data.frame()
+
+            for(i in c(1:NROW(original_amount))){
+                countries_costs_vector <- c()
+                original_region_name <- c()
+                target_region_name <- c()
+
+                for(country in countries_in_region){
+                    individual_cost <- ssp_cost_converter(original_amount[i,]$value, original_amount[i,]$region, original_year, country, target_year)
+                    countries_costs_vector <- append(countries_costs_vector, individual_cost)  
+                    original_region_name <- append(original_region_name, original_amount[i,]$region)
+                    target_region_name <- append(target_region_name, country)
+                }
+                cost_df <- data.frame(
+                    "original_region" = original_region_name,
+                    "target_region" = target_region_name, 
+                    "value" = countries_costs_vector
+                    )
+
+                all_dataframes <- rbind.data.frame(all_dataframes, cost_df)
+            }
+
+            general_output <- all_dataframes
+            
+        }else{
+            countries_costs_vector <- c()
+            original_region_name <- c()
+            
+            or_reg_flag <- ""
+
+            for(i in c(1:NROW(original_amount))){
+                individual_cost <- ssp_cost_converter(original_amount[i,]$value, original_amount[i,]$target_region, original_year, original_amount[i,]$original_region, target_year)
+                
+                countries_costs_vector <- append(countries_costs_vector, individual_cost)  
+                original_region_name <- append(original_region_name, original_amount[i,]$original_region)
+
+                if(or_reg_flag!=original_amount[i,]$original_region){
+                    or_reg_flag <- original_amount[i,]$original_region
+                    #print(or_reg_flag)
+                }
+
+            }
+
+            cost_df <- data.frame(
+                "original_region" = original_region_name,
+                "value" = countries_costs_vector
+                )
+
+
+            general_output <- aggregate(value ~ original_region, cost_df, mean)
+        }
+    }
+
+    if(grepl("AVERAGE",tmp_target_region)){
+        general_output <- mean(general_output$value)
+    }
+
+    return(general_output)
+}
+
+    
