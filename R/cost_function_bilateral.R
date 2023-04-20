@@ -9,14 +9,11 @@ print("*********************************************")
 library(ncdf4)
 library(tools)
 
-# data path
-data_path <- file.path(file_path_as_absolute(".."),"data")
-
 # Open a netCDF file
-my_ncdf <- nc_open(file.path(data_path,'ppp_er_data.h5'))
+my_ncdf <- nc_open('data/ppp_er_data.h5')
 
 # Open inflation data
-WB_inflation <- read.csv(file.path(data_path,"INFLATION_wb.csv"))
+WB_inflation <- read.csv("data/INFLATION_wb.csv")
 
 row.names.countries <-   c('ALB','DZA','AGO','ATG','ARG','ARM','ABW','AUS','AUT','AZE','BHS','BHR','BGD','BRB','BLR','BEL','BLZ','BEN','BMU','BTN','BOL','BIH','BWA','BRA','BRN','BGR','BFA','BDI','CPV','KHM','CMR','CAN','CAF','TCD','CHL','CHN','COL','COM','COD','COG','CRI','CIV','HRV','CYP','CZE','DNK','DMA','DOM','ECU','EGY','SLV','GNQ','EST','SWZ','ETH','FJI','FIN','FRA','GAB','GMB','GEO','DEU','GHA','GRC','GRD','GTM','GNB','GUY','HTI','HND','HKG','HUN','ISL','IND','IDN','IRN','IRQ','IRL','ISR','ITA','JAM','JPN','JOR','KAZ','KEN','KIR','KOR','KGZ','LAO','LVA','LBN','LSO','LBY','LTU','LUX','MAC','MDG','MYS','MDV','MLI','MLT','MRT','MUS','MEX','FSM','MDA','MNG','MNE','MAR','MOZ','NAM','NRU','NPL','NLD','NZL','NIC','NER','MKD','NOR','OMN','PAK','PLW','PAN','PNG','PRY','PER','PHL','POL','PRT','QAT','ROU','RUS','RWA','WSM','SAU','SEN','SRB','SYC','SLE','SGP','SVK','SVN','SLB','ZAF','ESP','LKA','KNA','LCA','VCT','SUR','SWE','CHE','TJK','TZA','THA','TLS','TGO','TON','TTO','TUN','TUR','UGA','UKR','ARE','GBR','USA','URY','VUT','VNM','ZMB')
 column.names.countries <- row.names.countries
