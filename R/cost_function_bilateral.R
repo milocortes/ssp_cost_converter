@@ -5,6 +5,11 @@ print("                                             ")
 print("          Version : 1.0.0                    ")
 print("*********************************************")
 
+# Install necessary packages
+list.of.packages <- c("ncdf4")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
 # load the ncdf4 package
 library(ncdf4)
 library(tools)
