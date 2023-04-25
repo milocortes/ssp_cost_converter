@@ -262,3 +262,7 @@ ssp_cost_converter_df <- function(df_costs){
 
     return(general_output)
 }
+
+prueba_ff <- function(){
+    print("PPP!!!")
+}
